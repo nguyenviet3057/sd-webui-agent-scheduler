@@ -394,13 +394,14 @@ class TaskRunner:
                         task.status = TaskStatus.DONE
                         task.result = json.dumps(result)
                         task_manager.update_task(task)
-                        self.__run_callbacks(
-                            "task_finished",
-                            task_id,
-                            status=TaskStatus.DONE,
-                            result=result,
-                            **task_meta,
-                        )
+                        if task_id is not None: # Debug by nguyenviet3057
+                            self.__run_callbacks(
+                                "task_finished",
+                                task_id,
+                                status=TaskStatus.DONE,
+                                result=result,
+                                **task_meta,
+                            )
 
                 self.__saved_images_path = []
             else:

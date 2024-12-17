@@ -280,6 +280,7 @@ class TaskManager(BaseTableManager):
         try:
             current = session.get(TaskTable, task.id)
             if current is None:
+                return None # Debug by nguyenviet3057
                 raise Exception(f"Task with id {id} not found")
 
             session.merge(task.to_table())

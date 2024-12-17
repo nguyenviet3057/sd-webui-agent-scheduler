@@ -147,7 +147,7 @@ class Script(scripts.Script):
         is_img2img = self.is_img2img
         dependencies: List[dict] = [
             x for x in root.dependencies if x["trigger"] == "click" and generate._id in x["targets"]
-        ]
+        ] if root is not None else []
 
         dependency: dict = None
         cnet_dependency: dict = None
@@ -162,35 +162,35 @@ class Script(scripts.Script):
 
             elif len(d["outputs"]) == 4:
                 dependency = d
+        if root is not None:
+            with root:
+                if self.checkpoint_dropdown is not None:
+                    self.checkpoint_dropdown.change(fn=self.on_checkpoint_changed, inputs=[self.checkpoint_dropdown])
 
-        with root:
-            if self.checkpoint_dropdown is not None:
-                self.checkpoint_dropdown.change(fn=self.on_checkpoint_changed, inputs=[self.checkpoint_dropdown])
-
-            fn_block = next(fn for fn in root.fns if compare_components_with_ids(fn.inputs, dependency["inputs"]))
-            fn = self.wrap_register_ui_task()
-            inputs = fn_block.inputs.copy()
-            inputs.insert(0, self.checkpoint_dropdown)
-            args = dict(
-                fn=fn,
-                _js="submit_enqueue_img2img" if is_img2img else "submit_enqueue",
-                inputs=inputs,
-                outputs=None,
-                show_progress=False,
-            )
-
-            self.submit_button.click(**args)
-
-            if cnet_dependency is not None:
-                cnet_fn_block = next(
-                    fn for fn in root.fns if compare_components_with_ids(fn.inputs, cnet_dependency["inputs"])
+                fn_block = next(fn for fn in root.fns if compare_components_with_ids(fn.inputs, dependency["inputs"]))
+                fn = self.wrap_register_ui_task()
+                inputs = fn_block.inputs.copy()
+                inputs.insert(0, self.checkpoint_dropdown)
+                args = dict(
+                    fn=fn,
+                    _js="submit_enqueue_img2img" if is_img2img else "submit_enqueue",
+                    inputs=inputs,
+                    outputs=None,
+                    show_progress=False,
                 )
-                self.submit_button.click(
-                    fn=UiControlNetUnit,
-                    inputs=cnet_fn_block.inputs,
-                    outputs=cnet_fn_block.outputs,
-                    queue=False,
-                )
+
+                self.submit_button.click(**args)
+
+                if cnet_dependency is not None:
+                    cnet_fn_block = next(
+                        fn for fn in root.fns if compare_components_with_ids(fn.inputs, cnet_dependency["inputs"])
+                    )
+                    self.submit_button.click(
+                        fn=UiControlNetUnit,
+                        inputs=cnet_fn_block.inputs,
+                        outputs=cnet_fn_block.outputs,
+                        queue=False,
+                    )
 
     def wrap_register_ui_task(self):
         def f(request: gr.Request, *args):
